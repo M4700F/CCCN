@@ -26,22 +26,47 @@ def train(msg: Message, context: Context):
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
-    trainloader, _ = load_data(partition_id, num_partitions, batch_size)
+    
+    if "current_round" not in context.state:
+        current_round = 1
+    else:
+        current_round = context.state["current_round"] + 1
 
-    # Call the training function
-    train_loss = train_fn(
-        model,
-        trainloader,
-        context.run_config["local-epochs"],
-        msg.content["config"]["lr"],
-        device,
-    )
+    context.state["current_round"] = current_round
+
+    if(partition_id < 30):
+        if current_round <= 5:
+            trainloader, _ = load_data(partition_id, num_partitions, batch_size)
+            # Call the training function
+            train_loss = train_fn(
+                model,
+                trainloader,
+                context.run_config["local-epochs"],
+                msg.content["config"]["lr"],
+                device,
+            )
+            num_examples = len(trainloader.dataset)
+        else:
+            # Skip training after round 5 for these clients
+            train_loss = 0.0   # fake loss
+            num_examples = 480 # fake 60000 / 100 = 600 samples, 80% of that
+    else:
+        trainloader, _ = load_data(partition_id, num_partitions, batch_size)
+        # Call the training function
+        train_loss = train_fn(
+            model,
+            trainloader,
+            context.run_config["local-epochs"],
+            msg.content["config"]["lr"],
+            device,
+        )
+        num_examples = len(trainloader.dataset)
 
     # Construct and return reply Message
     model_record = ArrayRecord(model.state_dict())
     metrics = {
         "train_loss": train_loss,
-        "num-examples": len(trainloader.dataset),
+        "num-examples": num_examples,
     }
     metric_record = MetricRecord(metrics)
     content = RecordDict({"arrays": model_record, "metrics": metric_record})
