@@ -57,5 +57,10 @@ def global_evaluate(server_round: int, arrays: ArrayRecord) -> MetricRecord:
     # Evaluate the global model on the test set
     test_loss, test_acc = test(model, test_dataloader, device)
 
+    with open("results.csv", "a") as f:
+        if server_round == 1:
+            f.write("round,loss,accuracy\n")
+        f.write(f"{server_round},{test_loss},{test_acc}\n")
+
     # Return the evaluation metrics
     return MetricRecord({"accuracy": test_acc, "loss": test_loss})
