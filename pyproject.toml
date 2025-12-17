@@ -25,7 +25,7 @@ serverapp = "pytorchexample.server_app:app"
 clientapp = "pytorchexample.client_app:app"
 
 [tool.flwr.app.config]
-num-server-rounds = 3
+num-server-rounds = 100
 fraction-evaluate = 0.5
 local-epochs = 1
 learning-rate = 0.1
@@ -35,13 +35,15 @@ batch-size = 32
 default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 10
+options.num-supernodes = 100
 
 [tool.flwr.federations.local-simulation-gpu]
-options.num-supernodes = 10
+options.num-supernodes = 100
 options.backend.client-resources.num-cpus = 2 # each ClientApp assumes to use 2CPUs
 options.backend.client-resources.num-gpus = 0.2 # at most 5 ClientApp will run in a given GPU
 
 [tool.flwr.federations.supergrid-deployment]
 address = "supergrid.flower.ai"
 enable-account-auth = true
+
+# flwr run . local-simulation-gpu
