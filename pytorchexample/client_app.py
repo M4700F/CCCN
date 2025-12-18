@@ -27,6 +27,7 @@ def train(msg: Message, context: Context):
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
     
+    # Track current round
     if "round_tracker" not in context.state:
         current_round = 1
     else:
@@ -34,13 +35,14 @@ def train(msg: Message, context: Context):
 
     context.state["round_tracker"] = MetricRecord({"current_round": float(current_round)})
 
-    if "weight_history" not in context.state:
-        context.state["weight_history"] = []
+    # Initialize history counter if not exists
+    if "history_count" not in context.state:
+        context.state["history_count"] = MetricRecord({"count": 0.0})
 
-    if(partition_id < 30):
+    if partition_id < 30:  # Free-rider clients
         if current_round <= 5:
+            # Phase 1: Train normally for first 5 rounds
             trainloader, _ = load_data(partition_id, num_partitions, batch_size)
-            # Call the training function
             train_loss = train_fn(
                 model,
                 trainloader,
@@ -49,47 +51,53 @@ def train(msg: Message, context: Context):
                 device,
             )
             num_examples = len(trainloader.dataset)
-
-            # store trained weights in history
-            context.state["weight_history"].append(ArrayRecord(model.state_dict()))
-
-            # keep only last 5 weight updates
-            if len(context.state["weight_history"]) > 5:
-                context.state["weight_history"].pop(0)
+            
+            # Store the trained weights in history with unique key
+            history_count = int(context.state["history_count"]["count"])
+            context.state[f"weight_history_{history_count % 5}"] = ArrayRecord(model.state_dict())
+            context.state["history_count"] = MetricRecord({"count": float(history_count + 1)})
+                
         else:
-
-            context.state["weight_history"].append(msg.content["arrays"])
-
-            # Keep only last 5 weights (sliding window)
-            if len(context.state["weight_history"]) > 5:
-                context.state["weight_history"].pop(0)
-
-
-            # Compute average of last 5 weights
+            # Phase 2: Send running average of last 5 weights
+            history_count = int(context.state["history_count"]["count"])
+            
+            # Store the newly received weights
+            context.state[f"weight_history_{history_count % 5}"] = msg.content["arrays"]
+            context.state["history_count"] = MetricRecord({"count": float(history_count + 1)})
+            
+            # Compute average of last 5 weights (or however many we have)
             avg_state_dict = {}
-            weight_history = context.state["weight_history"]
-
-
-            for key in model.state_dict().keys():
-                # Sum all weights for this layer across the 5 snapshots
-                weight_sum = sum(
-                    record.to_torch_state_dict()[key] 
-                    for record in weight_history
-                )
-                # Divide by number of snapshots to get average
-                avg_state_dict[key] = weight_sum / len(weight_history)
+            num_snapshots = min(5, history_count)
+            
+            # Get the state dict keys from current model
+            state_dict_keys = model.state_dict().keys()
+            
+            for key in state_dict_keys:
+                # Sum weights from the stored snapshots
+                weight_sum = None
+                for i in range(num_snapshots):
+                    snapshot_key = f"weight_history_{i}"
+                    if snapshot_key in context.state:
+                        snapshot_weights = context.state[snapshot_key].to_torch_state_dict()
+                        if weight_sum is None:
+                            weight_sum = snapshot_weights[key].clone()
+                        else:
+                            weight_sum += snapshot_weights[key]
+                
+                # Average the weights
+                if weight_sum is not None:
+                    avg_state_dict[key] = weight_sum / num_snapshots
             
             # Load the averaged weights into the model
             model.load_state_dict(avg_state_dict)
-
-
             
-            # Skip training after round 5 for these clients
-            train_loss = 0.0   # fake loss
-            num_examples = 480 # fake 60000 / 100 = 600 samples, 80% of that
+            # Fake metrics
+            train_loss = 0.0
+            num_examples = 480
+            
     else:
+        # Honest clients: always train normally
         trainloader, _ = load_data(partition_id, num_partitions, batch_size)
-        # Call the training function
         train_loss = train_fn(
             model,
             trainloader,
