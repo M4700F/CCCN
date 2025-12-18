@@ -27,12 +27,12 @@ def train(msg: Message, context: Context):
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
     
-    if "current_round" not in context.state:
+    if "round_tracker" not in context.state:
         current_round = 1
     else:
-        current_round = context.state["current_round"] + 1
+        current_round = int(context.state["round_tracker"]["current_round"]) + 1
 
-    context.state["current_round"] = current_round
+    context.state["round_tracker"] = MetricRecord({"current_round": float(current_round)})
 
     if(partition_id < 30):
         if current_round <= 5:
