@@ -34,6 +34,9 @@ def train(msg: Message, context: Context):
 
     context.state["round_tracker"] = MetricRecord({"current_round": float(current_round)})
 
+    if "weight_history" not in context.state:
+        context.state["weight_history"] = []
+
     if(partition_id < 30):
         if current_round <= 5:
             trainloader, _ = load_data(partition_id, num_partitions, batch_size)
@@ -46,7 +49,41 @@ def train(msg: Message, context: Context):
                 device,
             )
             num_examples = len(trainloader.dataset)
+
+            # store trained weights in history
+            context.state["weight_history"].append(ArrayRecord(model.state_dict()))
+
+            # keep only last 5 weight updates
+            if len(context.state["weight_history"]) > 5:
+                context.state["weight_history"].pop(0)
         else:
+
+            context.state["weight_history"].append(msg.content["arrays"])
+
+            # Keep only last 5 weights (sliding window)
+            if len(context.state["weight_history"]) > 5:
+                context.state["weight_history"].pop(0)
+
+
+            # Compute average of last 5 weights
+            avg_state_dict = {}
+            weight_history = context.state["weight_history"]
+
+
+            for key in model.state_dict().keys():
+                # Sum all weights for this layer across the 5 snapshots
+                weight_sum = sum(
+                    record.to_torch_state_dict()[key] 
+                    for record in weight_history
+                )
+                # Divide by number of snapshots to get average
+                avg_state_dict[key] = weight_sum / len(weight_history)
+            
+            # Load the averaged weights into the model
+            model.load_state_dict(avg_state_dict)
+
+
+            
             # Skip training after round 5 for these clients
             train_loss = 0.0   # fake loss
             num_examples = 480 # fake 60000 / 100 = 600 samples, 80% of that
