@@ -120,7 +120,7 @@ def train(msg: Message, context: Context):
             
             # Fake metrics
             train_loss = 0.0
-            num_examples = 480
+            num_examples = 400 # 80 percent of 50K rows divided by 100 clients
             
             # After round 6
             # 1. Shift: queue_0←queue_1, queue_1←queue_2, queue_2←queue_3, queue_3←queue_4
