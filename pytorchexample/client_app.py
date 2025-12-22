@@ -27,7 +27,9 @@ def train(msg: Message, context: Context):
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
     
-    k = 5
+    k = 13 # normal training
+    queue_sz = 5 # number of weights you want to store
+    l = k - queue_sz  # storing weights after this round
         
     if "round" not in context.state:
         context.state["round"] = ConfigRecord({"value": 0})
@@ -37,7 +39,7 @@ def train(msg: Message, context: Context):
 
     if partition_id < 30:  # Free-rider clients
         if current_round <= k:
-            # Phase 1: Train normally for first 5 rounds
+            # Phase 1: Train normally for first 10 rounds
             trainloader, _ = load_data(partition_id, num_partitions, batch_size)
             train_loss = train_fn(
                 model,
@@ -48,43 +50,44 @@ def train(msg: Message, context: Context):
             )
             num_examples = len(trainloader.dataset)
             
-            queue_idx = current_round - 1
-            context.state[f"queue_{queue_idx}"] = ArrayRecord(model.state_dict())
+            if(current_round > l):
+                queue_idx = current_round - 1 - l
+                context.state[f"queue_{queue_idx}"] = ArrayRecord(model.state_dict())
             
-            # current_round = 1
-            # queue_index = 1 - 1 = 0
-            # context.state["queue_0"] = Round1_trained_weights
-            # ```
-            # **State:**
-            # ```
-            # queue_0: Round1_weights
-            # queue_1: (empty)
-            # queue_2: (empty)
-            # queue_3: (empty)
-            # queue_4: (empty)
-            
-            # current_round = 2
-            # queue_index = 2 - 1 = 1
-            # context.state["queue_1"] = Round2_trained_weights
-            # ```
-            # **State:**
-            # ```
-            # queue_0: Round1_weights
-            # queue_1: Round2_weights
-            # queue_2: (empty)
-            # queue_3: (empty)
-            # queue_4: (empty)
-            # ```
+                # current_round = 6
+                # queue_index = 6 - 1 - 5 = 0
+                # context.state["queue_0"] = Round6_trained_weights
+                # ```
+                # **State:**
+                # ```
+                # queue_0: Round6_weights
+                # queue_1: (empty)
+                # queue_2: (empty)
+                # queue_3: (empty)
+                # queue_4: (empty)
+                
+                # current_round = 7
+                # queue_index = 7 - 1 - 5 = 1
+                # context.state["queue_1"] = Round7_trained_weights
+                # ```
+                # **State:**
+                # ```
+                # queue_0: Round1_weights
+                # queue_1: Round7_weights
+                # queue_2: (empty)
+                # queue_3: (empty)
+                # queue_4: (empty)
+                # ```
 
-            # **Round 3, 4, 5:** Continue filling...
+                # **Round 8, 9, 10:** Continue filling...
 
-            # **After Round 5:**
-            # ```
-            # queue_0: Round1_weights
-            # queue_1: Round2_weights
-            # queue_2: Round3_weights
-            # queue_3: Round4_weights
-            # queue_4: Round5_weights
+                # **After Round 10:**
+                # ```
+                # queue_0: Round6_weights
+                # queue_1: Round7_weights
+                # queue_2: Round8_weights
+                # queue_3: Round9_weights
+                # queue_4: Round10_weights
                 
         else:
             # Phase 2: Send running average of last 5 weights
@@ -102,7 +105,7 @@ def train(msg: Message, context: Context):
             for key in state_dict_keys:
                 w_sum = None
                 
-                for i in range(k):
+                for i in range(queue_sz):
                     queue_key = f"queue_{i}"
                     if queue_key in context.state:
                         model_weights = context.state[queue_key].to_torch_state_dict()
@@ -113,7 +116,7 @@ def train(msg: Message, context: Context):
                             w_sum += model_weights[key]
                 
                 if w_sum is not None:
-                    avg_state_dict[key] = w_sum / k
+                    avg_state_dict[key] = w_sum / queue_sz
             
             model.load_state_dict(avg_state_dict)
             
@@ -122,7 +125,7 @@ def train(msg: Message, context: Context):
             train_loss = 0.0
             num_examples = 480
             
-            # After round 6
+            # After round 10
             # 1. Shift: queue_0←queue_1, queue_1←queue_2, queue_2←queue_3, queue_3←queue_4
             # 2. Add new: queue_4 ← received_weights
             # 3. Average: (queue_0 + queue_1 + queue_2 + queue_3 + queue_4) / 5
