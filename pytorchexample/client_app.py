@@ -92,12 +92,12 @@ def train(msg: Message, context: Context):
         else:
             # Phase 2: Send running average of last 5 weights
             # shift the model. Acts like POP
-            for i in range(k - 1):
+            for i in range(queue_sz - 1):
                 if f"queue_{i+1}" in context.state:
                     context.state[f"queue_{i}"] = context.state[f"queue_{i+1}"]
                     
             # add the latest model weights at the end
-            context.state[f"queue_{k-1}"] = msg.content["arrays"]
+            context.state[f"queue_{queue_sz-1}"] = msg.content["arrays"]
             
             avg_state_dict = {}
             state_dict_keys = model.state_dict().keys()
