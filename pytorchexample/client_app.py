@@ -26,7 +26,10 @@ def train(msg: Message, context: Context):
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
     alpha = context.run_config.get("dirichlet-alpha", 0.3)
-    k = 5  # queue length for free-rider
+    
+    k = 13 # normal training
+    queue_sz = 5 # number of weights you want to store
+    l = k - queue_sz  # storing weights after this round
     
         # Track round number in context.state
     if "round" not in context.state:
@@ -48,23 +51,27 @@ def train(msg: Message, context: Context):
                 device,
             )
             num_examples = len(trainloader.dataset)
-            queue_idx = current_round - 1
-            context.state[f"queue_{queue_idx}"] = ArrayRecord(model.state_dict())
+            
+            if(current_round > l):
+                queue_idx = current_round - 1 - l
+                context.state[f"queue_{queue_idx}"] = ArrayRecord(model.state_dict())
         else:
             # Phase 2: Send running average of last k weights
             # Shift the queue (pop oldest, push newest)
-            for i in range(k - 1):
+            for i in range(queue_sz - 1):
                 if f"queue_{i+1}" in context.state:
                     context.state[f"queue_{i}"] = context.state[f"queue_{i+1}"]
             # Add the latest received weights at the end
-            context.state[f"queue_{k-1}"] = msg.content["arrays"]
+            context.state[f"queue_{queue_sz-1}"] = msg.content["arrays"]
 
             # Average the last k weights
             avg_state_dict = {}
             state_dict_keys = model.state_dict().keys()
+            
             for key in state_dict_keys:
                 w_sum = None
-                for i in range(k):
+                
+                for i in range(queue_sz):
                     queue_key = f"queue_{i}"
                     if queue_key in context.state:
                         model_weights = context.state[queue_key].to_torch_state_dict()
@@ -73,7 +80,8 @@ def train(msg: Message, context: Context):
                         else:
                             w_sum += model_weights[key]
                 if w_sum is not None:
-                    avg_state_dict[key] = w_sum / k
+                    avg_state_dict[key] = w_sum / queue_sz
+                    
             model.load_state_dict(avg_state_dict)
             # Fake metrics for free-rider
             train_loss = 0.0
