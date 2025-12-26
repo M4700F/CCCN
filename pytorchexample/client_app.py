@@ -16,6 +16,10 @@ app = ClientApp()
 def train(msg: Message, context: Context):
     """Train the model on local data."""
 
+    # Get configuration
+    partitioning = context.run_config.get("partitioning", "iid")
+    dirichlet_alpha = context.run_config.get("dirichlet-alpha", 0.5)
+
     # Load the model and initialize it with the received weights
     model = Net()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
@@ -26,19 +30,25 @@ def train(msg: Message, context: Context):
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
-    
+
     k = 5
-        
+
     if "round" not in context.state:
         context.state["round"] = ConfigRecord({"value": 0})
-        
+
     current_round = int(context.state["round"]["value"] + 1)
     context.state["round"] = ConfigRecord({"value": current_round})
 
     if partition_id < 30:  # Free-rider clients
         if current_round <= k:
             # Phase 1: Train normally for first 5 rounds
-            trainloader, _ = load_data(partition_id, num_partitions, batch_size)
+            trainloader, _ = load_data(
+                partition_id,
+                num_partitions,
+                batch_size,
+                partitioning=partitioning,
+                dirichlet_alpha=dirichlet_alpha
+            )
             train_loss = train_fn(
                 model,
                 trainloader,
@@ -130,7 +140,13 @@ def train(msg: Message, context: Context):
             
     else:
         # Honest clients: always train normally
-        trainloader, _ = load_data(partition_id, num_partitions, batch_size)
+        trainloader, _ = load_data(
+            partition_id,
+            num_partitions,
+            batch_size,
+            partitioning=partitioning,
+            dirichlet_alpha=dirichlet_alpha
+        )
         train_loss = train_fn(
             model,
             trainloader,
@@ -155,6 +171,10 @@ def train(msg: Message, context: Context):
 def evaluate(msg: Message, context: Context):
     """Evaluate the model on local data."""
 
+    # Get configuration
+    partitioning = context.run_config.get("partitioning", "iid")
+    dirichlet_alpha = context.run_config.get("dirichlet-alpha", 0.5)
+
     # Load the model and initialize it with the received weights
     model = Net()
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
@@ -165,7 +185,13 @@ def evaluate(msg: Message, context: Context):
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
     batch_size = context.run_config["batch-size"]
-    _, valloader = load_data(partition_id, num_partitions, batch_size)
+    _, valloader = load_data(
+        partition_id,
+        num_partitions,
+        batch_size,
+        partitioning=partitioning,
+        dirichlet_alpha=dirichlet_alpha
+    )
 
     # Call the evaluation function
     eval_loss, eval_acc = test_fn(
