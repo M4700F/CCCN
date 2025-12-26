@@ -57,8 +57,21 @@ cifar_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.
 def apply_transforms(batch, dataset="mnist"):
     """Apply transforms to the partition from FederatedDataset."""
     transforms = mnist_transforms if dataset.lower() == "mnist" else cifar_transforms
-    batch["image"] = [transforms(img) for img in batch["image"]]
-    return batch
+    # MNIST uses "image" key, CIFAR-10 uses "img" key
+    image_key = "image" if dataset.lower() == "mnist" else "img"
+
+    # Apply transforms and normalize key to "image" for consistency
+    transformed_images = [transforms(img) for img in batch[image_key]]
+
+    # Create new batch with standardized "image" key
+    result = batch.copy()
+    result["image"] = transformed_images
+
+    # Remove the original key if it was "img" (CIFAR-10)
+    if image_key == "img" and "img" in result:
+        del result["img"]
+
+    return result
 
 
 def load_data(
