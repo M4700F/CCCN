@@ -111,25 +111,25 @@ flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="noniid" dirich
 ```bash
 flwr run . --run-config 'aggregator="fedmedian" partitioning="iid" dataset="cifar10"'
 ```
-**Result file:** `freerider_cifar10_iid_fedmedian.csv`
+**Result file:** `cifar_results/freerider_cifar10_iid_fedmedian.csv`
 
 **8. FedTrimmedAvg (CIFAR-10 IID):**
 ```bash
 flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="iid" dataset="cifar10"'
 ```
-**Result file:** `freerider_cifar10_iid_fedtrimmedavg.csv`
+**Result file:** `cifar_results/freerider_cifar10_iid_fedtrimmedavg.csv`
 
 **9. FedMedian (CIFAR-10 Non-IID):**
 ```bash
 flwr run . --run-config 'aggregator="fedmedian" partitioning="noniid" dataset="cifar10" dirichlet-alpha=0.5'
 ```
-**Result file:** `freerider_cifar10_noniid_fedmedian.csv`
+**Result file:** `cifar_results/freerider_cifar10_noniid_fedmedian.csv`
 
 **10. FedTrimmedAvg (CIFAR-10 Non-IID):**
 ```bash
 flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="noniid" dataset="cifar10" dirichlet-alpha=0.5'
 ```
-**Result file:** `freerider_cifar10_noniid_fedtrimmedavg.csv`
+**Result file:** `cifar_results/freerider_cifar10_noniid_fedtrimmedavg.csv`
 
 ---
 
@@ -163,7 +163,7 @@ This runs:
 - FedMedian with Non-IID on CIFAR-10
 - FedTrimmedAvg with Non-IID on CIFAR-10
 
-**Note:** MNIST and CIFAR-10 results are saved in separate CSV files to avoid conflicts.
+**Note:** MNIST results are saved in the main directory, while CIFAR-10 results are saved in the `cifar_results/` folder to keep them organized.
 
 ---
 
@@ -174,7 +174,7 @@ Results are saved to CSV files with the naming pattern:
 freerider_{dataset}_{partitioning}_{aggregator}.csv
 ```
 
-### MNIST Results:
+### MNIST Results (saved in main directory):
 - `freerider_mnist_iid_fedavg.csv`
 - `freerider_mnist_iid_fedmedian.csv`
 - `freerider_mnist_iid_fedtrimmedavg.csv`
@@ -182,11 +182,11 @@ freerider_{dataset}_{partitioning}_{aggregator}.csv
 - `freerider_mnist_noniid_fedmedian.csv`
 - `freerider_mnist_noniid_fedtrimmedavg.csv`
 
-### CIFAR-10 Results:
-- `freerider_cifar10_iid_fedmedian.csv`
-- `freerider_cifar10_iid_fedtrimmedavg.csv`
-- `freerider_cifar10_noniid_fedmedian.csv`
-- `freerider_cifar10_noniid_fedtrimmedavg.csv`
+### CIFAR-10 Results (saved in `cifar_results/` folder):
+- `cifar_results/freerider_cifar10_iid_fedmedian.csv`
+- `cifar_results/freerider_cifar10_iid_fedtrimmedavg.csv`
+- `cifar_results/freerider_cifar10_noniid_fedmedian.csv`
+- `cifar_results/freerider_cifar10_noniid_fedtrimmedavg.csv`
 
 Each CSV contains: `round,loss,accuracy`
 

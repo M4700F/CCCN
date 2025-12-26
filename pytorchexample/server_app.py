@@ -96,7 +96,14 @@ def create_global_evaluate(aggregator: str, dataset: str, partitioning: str):
             mode = 'a'
 
         # CSV filename includes dataset, partitioning, and aggregator
-        csv_filename = f"freerider_{dataset}_{partitioning}_{aggregator}.csv"
+        # Save CIFAR-10 results in separate folder
+        if dataset.lower() == "cifar10":
+            import os
+            os.makedirs("cifar_results", exist_ok=True)
+            csv_filename = f"cifar_results/freerider_{dataset}_{partitioning}_{aggregator}.csv"
+        else:
+            csv_filename = f"freerider_{dataset}_{partitioning}_{aggregator}.csv"
+
         with open(csv_filename, mode) as f:
             if server_round == 1:
                 f.write("round,loss,accuracy\n")
