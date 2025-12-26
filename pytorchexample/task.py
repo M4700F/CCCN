@@ -13,22 +13,33 @@ from torchvision.transforms import Compose, Normalize, ToTensor
 class Net(nn.Module):
     """Model (simple CNN adapted from 'PyTorch: A 60 Minute Blitz')"""
 
-    def __init__(self):
+    def __init__(self, num_channels=1):
+        """Initialize network.
+
+        Args:
+            num_channels: 1 for MNIST (grayscale), 3 for CIFAR-10 (RGB)
+        """
         super(Net, self).__init__()
-        # self.conv1 = nn.Conv2d(3, 6, 5)
-        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.num_channels = num_channels
+        self.conv1 = nn.Conv2d(num_channels, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
-        # self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc1 = nn.Linear(16 * 4 * 4, 120)
+
+        # MNIST: 28x28 -> after convs: 16*4*4 = 256
+        # CIFAR-10: 32x32 -> after convs: 16*5*5 = 400
+        fc1_input = 16 * 4 * 4 if num_channels == 1 else 16 * 5 * 5
+        self.fc1 = nn.Linear(fc1_input, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        # x = x.view(-1, 16 * 5 * 5)
-        x = x.view(-1, 16 * 4 * 4)
+        # Flatten dynamically based on num_channels
+        if self.num_channels == 1:
+            x = x.view(-1, 16 * 4 * 4)
+        else:
+            x = x.view(-1, 16 * 5 * 5)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         return self.fc3(x)
@@ -36,13 +47,17 @@ class Net(nn.Module):
 
 fds = None  # Cache FederatedDataset
 
-# pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-pytorch_transforms = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
+# MNIST transforms: grayscale normalization
+mnist_transforms = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
+
+# CIFAR-10 transforms: RGB normalization
+cifar_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 
-def apply_transforms(batch):
+def apply_transforms(batch, dataset="mnist"):
     """Apply transforms to the partition from FederatedDataset."""
-    batch["image"] = [pytorch_transforms(img) for img in batch["image"]]
+    transforms = mnist_transforms if dataset.lower() == "mnist" else cifar_transforms
+    batch["image"] = [transforms(img) for img in batch["image"]]
     return batch
 
 
@@ -51,9 +66,19 @@ def load_data(
     num_partitions: int,
     batch_size: int,
     partitioning: str = "iid",
-    dirichlet_alpha: float = 0.5
+    dirichlet_alpha: float = 0.5,
+    dataset: str = "mnist"
 ):
-    """Load partition MNIST data with configurable partitioning strategy."""
+    """Load partition data with configurable partitioning strategy.
+
+    Args:
+        partition_id: ID of the partition to load
+        num_partitions: Total number of partitions
+        batch_size: Batch size for dataloaders
+        partitioning: "iid" or "noniid"
+        dirichlet_alpha: Alpha parameter for Dirichlet partitioning
+        dataset: "mnist" or "cifar10"
+    """
     # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
@@ -67,15 +92,19 @@ def load_data(
         else:  # iid
             partitioner = IidPartitioner(num_partitions=num_partitions)
 
+        # Load appropriate dataset
+        dataset_name = "mnist" if dataset.lower() == "mnist" else "uoft-cs/cifar10"
         fds = FederatedDataset(
-            dataset="mnist",
+            dataset=dataset_name,
             partitioners={"train": partitioner},
         )
     partition = fds.load_partition(partition_id)
     # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
-    # Construct dataloaders
-    partition_train_test = partition_train_test.with_transform(apply_transforms)
+    # Construct dataloaders with dataset-specific transforms
+    partition_train_test = partition_train_test.with_transform(
+        lambda batch: apply_transforms(batch, dataset)
+    )
     trainloader = DataLoader(
         partition_train_test["train"], batch_size=batch_size, shuffle=True
     )
@@ -83,13 +112,22 @@ def load_data(
     return trainloader, testloader
 
 
-def load_centralized_dataset():
-    """Load test set and return dataloader."""
+def load_centralized_dataset(dataset="mnist"):
+    """Load test set and return dataloader.
+
+    Args:
+        dataset: "mnist" or "cifar10"
+    """
     # Load entire test set
-    # test_dataset = load_dataset("uoft-cs/cifar10", split="test")
-    test_dataset = load_dataset("mnist", split="test")
-    dataset = test_dataset.with_format("torch").with_transform(apply_transforms)
-    return DataLoader(dataset, batch_size=128)
+    if dataset.lower() == "mnist":
+        test_dataset = load_dataset("mnist", split="test")
+    else:
+        test_dataset = load_dataset("uoft-cs/cifar10", split="test")
+
+    dataset_obj = test_dataset.with_format("torch").with_transform(
+        lambda batch: apply_transforms(batch, dataset)
+    )
+    return DataLoader(dataset_obj, batch_size=128)
 
 
 def train(net, trainloader, epochs, lr, device):

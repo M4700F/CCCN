@@ -55,6 +55,7 @@ pip install -e .
 | Parameter | Options | Default | Description |
 |-----------|---------|---------|-------------|
 | `aggregator` | `fedavg`, `fedmedian`, `fedtrimmedavg` | `fedavg` | Aggregation strategy |
+| `dataset` | `mnist`, `cifar10` | `mnist` | Dataset to use |
 | `partitioning` | `iid`, `noniid` | `iid` | Data partitioning strategy |
 | `trim-ratio` | `0.0` - `0.5` | `0.1` | Trim ratio for FedTrimmedAvg |
 | `dirichlet-alpha` | `0.1` - `1.0` | `0.5` | Alpha for non-IID (lower = more non-IID) |
@@ -104,31 +105,65 @@ flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="noniid" dirich
 ```
 **Result file:** `freerider_mnist_noniid_fedtrimmedavg.csv`
 
+#### CIFAR-10 Partitioning
+
+**7. FedMedian (CIFAR-10 IID):**
+```bash
+flwr run . --run-config 'aggregator="fedmedian" partitioning="iid" dataset="cifar10"'
+```
+**Result file:** `freerider_cifar10_iid_fedmedian.csv`
+
+**8. FedTrimmedAvg (CIFAR-10 IID):**
+```bash
+flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="iid" dataset="cifar10"'
+```
+**Result file:** `freerider_cifar10_iid_fedtrimmedavg.csv`
+
+**9. FedMedian (CIFAR-10 Non-IID):**
+```bash
+flwr run . --run-config 'aggregator="fedmedian" partitioning="noniid" dataset="cifar10" dirichlet-alpha=0.5'
+```
+**Result file:** `freerider_cifar10_noniid_fedmedian.csv`
+
+**10. FedTrimmedAvg (CIFAR-10 Non-IID):**
+```bash
+flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="noniid" dataset="cifar10" dirichlet-alpha=0.5'
+```
+**Result file:** `freerider_cifar10_noniid_fedtrimmedavg.csv`
+
 ---
 
 ## Complete Experiment Suite
 
-To run all 6 experiments systematically:
+### MNIST Experiments
+
+To run all MNIST experiments (4 experiments: 2 aggregators × 2 partitioning strategies):
 
 ```bash
-#!/bin/bash
-
-echo "Running Free Rider Attack Experiments..."
-
-# IID Partitioning
-echo "IID Experiments..."
-flwr run . --run-config 'aggregator="fedavg" partitioning="iid"'
-flwr run . --run-config 'aggregator="fedmedian" partitioning="iid"'
-flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="iid"'
-
-# Non-IID Partitioning
-echo "Non-IID Experiments..."
-flwr run . --run-config 'aggregator="fedavg" partitioning="noniid"'
-flwr run . --run-config 'aggregator="fedmedian" partitioning="noniid"'
-flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="noniid"'
-
-echo "All experiments completed!"
+bash run_experiments.sh
 ```
+
+This runs:
+- FedMedian with IID
+- FedTrimmedAvg with IID
+- FedMedian with Non-IID
+- FedTrimmedAvg with Non-IID
+
+### CIFAR-10 Experiments
+
+To run all CIFAR-10 experiments (4 experiments: 2 aggregators × 2 partitioning strategies):
+
+```bash
+bash run_cifar_experiments.sh
+```
+
+This runs:
+- FedMedian with IID on CIFAR-10
+- FedTrimmedAvg with IID on CIFAR-10
+- FedMedian with Non-IID on CIFAR-10
+- FedTrimmedAvg with Non-IID on CIFAR-10
+
+**Note:** MNIST and CIFAR-10 results are saved in separate CSV files to avoid conflicts.
 
 ---
 
@@ -139,13 +174,19 @@ Results are saved to CSV files with the naming pattern:
 freerider_{dataset}_{partitioning}_{aggregator}.csv
 ```
 
-Examples:
+### MNIST Results:
 - `freerider_mnist_iid_fedavg.csv`
 - `freerider_mnist_iid_fedmedian.csv`
 - `freerider_mnist_iid_fedtrimmedavg.csv`
 - `freerider_mnist_noniid_fedavg.csv`
 - `freerider_mnist_noniid_fedmedian.csv`
 - `freerider_mnist_noniid_fedtrimmedavg.csv`
+
+### CIFAR-10 Results:
+- `freerider_cifar10_iid_fedmedian.csv`
+- `freerider_cifar10_iid_fedtrimmedavg.csv`
+- `freerider_cifar10_noniid_fedmedian.csv`
+- `freerider_cifar10_noniid_fedtrimmedavg.csv`
 
 Each CSV contains: `round,loss,accuracy`
 

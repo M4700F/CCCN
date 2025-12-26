@@ -25,8 +25,9 @@ def main(grid: Grid, context: Context) -> None:
     partitioning: str = context.run_config.get("partitioning", "iid")
     dirichlet_alpha: float = context.run_config.get("dirichlet-alpha", 0.5)
 
-    # Load global model
-    global_model = Net()
+    # Load global model with appropriate number of channels
+    num_channels = 1 if dataset.lower() == "mnist" else 3
+    global_model = Net(num_channels=num_channels)
     arrays = ArrayRecord(global_model.state_dict())
 
     # Print experiment configuration
@@ -77,13 +78,14 @@ def create_global_evaluate(aggregator: str, dataset: str, partitioning: str):
         """Evaluate model on central data."""
 
         # Load the model and initialize it with the received weights
-        model = Net()
+        num_channels = 1 if dataset.lower() == "mnist" else 3
+        model = Net(num_channels=num_channels)
         model.load_state_dict(arrays.to_torch_state_dict())
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model.to(device)
 
         # Load entire test set
-        test_dataloader = load_centralized_dataset()
+        test_dataloader = load_centralized_dataset(dataset)
 
         # Evaluate the global model on the test set
         test_loss, test_acc = test(model, test_dataloader, device)
