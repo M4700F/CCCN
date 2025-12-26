@@ -1,12 +1,27 @@
 ---
-tags: [quickstart, vision, fds]
-dataset: [CIFAR-10]
+tags: [quickstart, vision, fds, federated-learning, aggregation]
+dataset: [MNIST, CIFAR-10]
 framework: [torch, torchvision]
 ---
 
-# Federated Learning with PyTorch and Flower (Quickstart Example)
+# Federated Learning with Multiple Aggregators
 
-This introductory example to Flower uses PyTorch, but deep knowledge of PyTorch is not necessarily required to run the example. However, it will help you understand how to adapt Flower to your use case. Running this example in itself is quite easy. This example uses [Flower Datasets](https://flower.ai/docs/datasets/) to download, partition and preprocess the CIFAR-10 dataset.
+This project implements federated learning with PyTorch and Flower, supporting **multiple aggregation strategies** (FedAvg, FedMedian, FedTrimmedAvg) on **multiple datasets** (MNIST, CIFAR-10) with both **IID and non-IID** data partitioning.
+
+## Features
+
+- **3 Aggregation Strategies**:
+  - `FedAvg`: Standard weighted averaging (default)
+  - `FedMedian`: Median-based aggregation (robust to outliers)
+  - `FedTrimmedAvg`: Trimmed mean aggregation (configurable trim ratio)
+
+- **2 Datasets**:
+  - `MNIST`: Grayscale handwritten digits (28x28, 1 channel)
+  - `CIFAR-10`: Color images (32x32, 3 channels)
+
+- **2 Partitioning Strategies**:
+  - `IID`: Independent and Identically Distributed (balanced)
+  - `NonIID`: Dirichlet-based partitioning (configurable alpha)
 
 ## Set up the project
 
@@ -65,11 +80,134 @@ You can also override some of the settings for your `ClientApp` and `ServerApp` 
 flwr run . --run-config "num-server-rounds=5 learning-rate=0.05"
 ```
 
+## Running Different Experiments
+
+### Configuration Parameters
+
+All experiments are configured through `pyproject.toml` or command-line arguments. Key parameters:
+
+| Parameter | Options | Default | Description |
+|-----------|---------|---------|-------------|
+| `aggregator` | `fedavg`, `fedmedian`, `fedtrimmedavg` | `fedavg` | Aggregation strategy |
+| `dataset` | `mnist`, `cifar10` | `mnist` | Dataset to use |
+| `partitioning` | `iid`, `noniid` | `iid` | Data partitioning strategy |
+| `trim-ratio` | `0.0` - `0.5` | `0.1` | Trim ratio for FedTrimmedAvg (10% = 0.1) |
+| `dirichlet-alpha` | `0.1` - `1.0` | `0.5` | Alpha for non-IID (lower = more non-IID) |
+| `num-server-rounds` | `1` - `N` | `100` | Number of training rounds |
+| `learning-rate` | float | `0.1` | Learning rate |
+| `batch-size` | int | `32` | Batch size |
+
+### Example Experiments
+
+#### 1. MNIST with FedAvg (IID)
+```bash
+flwr run . --run-config "aggregator=fedavg dataset=mnist partitioning=iid"
+```
+
+#### 2. MNIST with FedMedian (IID)
+```bash
+flwr run . --run-config "aggregator=fedmedian dataset=mnist partitioning=iid"
+```
+
+#### 3. MNIST with FedTrimmedAvg (IID)
+```bash
+flwr run . --run-config "aggregator=fedtrimmedavg dataset=mnist partitioning=iid trim-ratio=0.1"
+```
+
+#### 4. MNIST with FedAvg (Non-IID)
+```bash
+flwr run . --run-config "aggregator=fedavg dataset=mnist partitioning=noniid dirichlet-alpha=0.5"
+```
+
+#### 5. MNIST with FedMedian (Non-IID)
+```bash
+flwr run . --run-config "aggregator=fedmedian dataset=mnist partitioning=noniid dirichlet-alpha=0.5"
+```
+
+#### 6. MNIST with FedTrimmedAvg (Non-IID)
+```bash
+flwr run . --run-config "aggregator=fedtrimmedavg dataset=mnist partitioning=noniid dirichlet-alpha=0.5"
+```
+
+#### 7. CIFAR-10 with FedAvg (IID)
+```bash
+flwr run . --run-config "aggregator=fedavg dataset=cifar10 partitioning=iid"
+```
+
+#### 8. CIFAR-10 with FedMedian (IID)
+```bash
+flwr run . --run-config "aggregator=fedmedian dataset=cifar10 partitioning=iid"
+```
+
+#### 9. CIFAR-10 with FedTrimmedAvg (IID)
+```bash
+flwr run . --run-config "aggregator=fedtrimmedavg dataset=cifar10 partitioning=iid trim-ratio=0.1"
+```
+
+#### 10. CIFAR-10 with FedAvg (Non-IID)
+```bash
+flwr run . --run-config "aggregator=fedavg dataset=cifar10 partitioning=noniid dirichlet-alpha=0.5"
+```
+
+#### 11. CIFAR-10 with FedMedian (Non-IID)
+```bash
+flwr run . --run-config "aggregator=fedmedian dataset=cifar10 partitioning=noniid dirichlet-alpha=0.5"
+```
+
+#### 12. CIFAR-10 with FedTrimmedAvg (Non-IID)
+```bash
+flwr run . --run-config "aggregator=fedtrimmedavg dataset=cifar10 partitioning=noniid dirichlet-alpha=0.5"
+```
+
+### GPU Acceleration
+
 Run the project in the `local-simulation-gpu` federation that gives CPU and GPU resources to each `ClientApp`. By default, at most 5x`ClientApp` will run in parallel in the available GPU. You can tweak the degree of parallelism by adjusting the settings of this federation in the `pyproject.toml`.
 
 ```bash
-# Run with the `local-simulation-gpu` federation
-flwr run . local-simulation-gpu
+# Run with GPU (example: MNIST with FedMedian)
+flwr run . local-simulation-gpu --run-config "aggregator=fedmedian dataset=mnist"
+```
+
+### Results
+
+Results are automatically saved to CSV files with the naming pattern:
+- `results_{dataset}_{aggregator}.csv`
+
+Examples:
+- `results_mnist_fedavg.csv`
+- `results_mnist_fedmedian.csv`
+- `results_mnist_fedtrimmedavg.csv`
+- `results_cifar10_fedavg.csv`
+- etc.
+
+Each CSV contains columns: `round,loss,accuracy`
+
+### Quick Experiment Script
+
+To run all 12 experiments systematically, you can create a bash script:
+
+```bash
+#!/bin/bash
+
+# MNIST IID
+flwr run . --run-config "aggregator=fedavg dataset=mnist partitioning=iid"
+flwr run . --run-config "aggregator=fedmedian dataset=mnist partitioning=iid"
+flwr run . --run-config "aggregator=fedtrimmedavg dataset=mnist partitioning=iid"
+
+# MNIST Non-IID
+flwr run . --run-config "aggregator=fedavg dataset=mnist partitioning=noniid"
+flwr run . --run-config "aggregator=fedmedian dataset=mnist partitioning=noniid"
+flwr run . --run-config "aggregator=fedtrimmedavg dataset=mnist partitioning=noniid"
+
+# CIFAR-10 IID
+flwr run . --run-config "aggregator=fedavg dataset=cifar10 partitioning=iid"
+flwr run . --run-config "aggregator=fedmedian dataset=cifar10 partitioning=iid"
+flwr run . --run-config "aggregator=fedtrimmedavg dataset=cifar10 partitioning=iid"
+
+# CIFAR-10 Non-IID
+flwr run . --run-config "aggregator=fedavg dataset=cifar10 partitioning=noniid"
+flwr run . --run-config "aggregator=fedmedian dataset=cifar10 partitioning=noniid"
+flwr run . --run-config "aggregator=fedtrimmedavg dataset=cifar10 partitioning=noniid"
 ```
 
 > [!TIP]
