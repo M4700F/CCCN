@@ -101,62 +101,62 @@ All experiments are configured through `pyproject.toml` or command-line argument
 
 #### 1. MNIST with FedAvg (IID)
 ```bash
-flwr run . --run-config "aggregator=fedavg dataset=mnist partitioning=iid"
+flwr run . --run-config 'aggregator="fedavg" dataset="mnist" partitioning="iid"'
 ```
 
 #### 2. MNIST with FedMedian (IID)
 ```bash
-flwr run . --run-config "aggregator=fedmedian dataset=mnist partitioning=iid"
+flwr run . --run-config 'aggregator="fedmedian" dataset="mnist" partitioning="iid"'
 ```
 
 #### 3. MNIST with FedTrimmedAvg (IID)
 ```bash
-flwr run . --run-config "aggregator=fedtrimmedavg dataset=mnist partitioning=iid trim-ratio=0.1"
+flwr run . --run-config 'aggregator="fedtrimmedavg" dataset="mnist" partitioning="iid" trim-ratio=0.1'
 ```
 
 #### 4. MNIST with FedAvg (Non-IID)
 ```bash
-flwr run . --run-config "aggregator=fedavg dataset=mnist partitioning=noniid dirichlet-alpha=0.5"
+flwr run . --run-config 'aggregator="fedavg" dataset="mnist" partitioning="noniid" dirichlet-alpha=0.5'
 ```
 
 #### 5. MNIST with FedMedian (Non-IID)
 ```bash
-flwr run . --run-config "aggregator=fedmedian dataset=mnist partitioning=noniid dirichlet-alpha=0.5"
+flwr run . --run-config 'aggregator="fedmedian" dataset="mnist" partitioning="noniid" dirichlet-alpha=0.5'
 ```
 
 #### 6. MNIST with FedTrimmedAvg (Non-IID)
 ```bash
-flwr run . --run-config "aggregator=fedtrimmedavg dataset=mnist partitioning=noniid dirichlet-alpha=0.5"
+flwr run . --run-config 'aggregator="fedtrimmedavg" dataset="mnist" partitioning="noniid" dirichlet-alpha=0.5'
 ```
 
 #### 7. CIFAR-10 with FedAvg (IID)
 ```bash
-flwr run . --run-config "aggregator=fedavg dataset=cifar10 partitioning=iid"
+flwr run . --run-config 'aggregator="fedavg" dataset="cifar10" partitioning="iid"'
 ```
 
 #### 8. CIFAR-10 with FedMedian (IID)
 ```bash
-flwr run . --run-config "aggregator=fedmedian dataset=cifar10 partitioning=iid"
+flwr run . --run-config 'aggregator="fedmedian" dataset="cifar10" partitioning="iid"'
 ```
 
 #### 9. CIFAR-10 with FedTrimmedAvg (IID)
 ```bash
-flwr run . --run-config "aggregator=fedtrimmedavg dataset=cifar10 partitioning=iid trim-ratio=0.1"
+flwr run . --run-config 'aggregator="fedtrimmedavg" dataset="cifar10" partitioning="iid" trim-ratio=0.1'
 ```
 
 #### 10. CIFAR-10 with FedAvg (Non-IID)
 ```bash
-flwr run . --run-config "aggregator=fedavg dataset=cifar10 partitioning=noniid dirichlet-alpha=0.5"
+flwr run . --run-config 'aggregator="fedavg" dataset="cifar10" partitioning="noniid" dirichlet-alpha=0.5'
 ```
 
 #### 11. CIFAR-10 with FedMedian (Non-IID)
 ```bash
-flwr run . --run-config "aggregator=fedmedian dataset=cifar10 partitioning=noniid dirichlet-alpha=0.5"
+flwr run . --run-config 'aggregator="fedmedian" dataset="cifar10" partitioning="noniid" dirichlet-alpha=0.5'
 ```
 
 #### 12. CIFAR-10 with FedTrimmedAvg (Non-IID)
 ```bash
-flwr run . --run-config "aggregator=fedtrimmedavg dataset=cifar10 partitioning=noniid dirichlet-alpha=0.5"
+flwr run . --run-config 'aggregator="fedtrimmedavg" dataset="cifar10" partitioning="noniid" dirichlet-alpha=0.5'
 ```
 
 ### GPU Acceleration
@@ -165,7 +165,7 @@ Run the project in the `local-simulation-gpu` federation that gives CPU and GPU 
 
 ```bash
 # Run with GPU (example: MNIST with FedMedian)
-flwr run . local-simulation-gpu --run-config "aggregator=fedmedian dataset=mnist"
+flwr run . local-simulation-gpu --run-config 'aggregator="fedmedian" dataset="mnist"'
 ```
 
 ### Results
@@ -190,24 +190,24 @@ To run all 12 experiments systematically, you can create a bash script:
 #!/bin/bash
 
 # MNIST IID
-flwr run . --run-config "aggregator=fedavg dataset=mnist partitioning=iid"
-flwr run . --run-config "aggregator=fedmedian dataset=mnist partitioning=iid"
-flwr run . --run-config "aggregator=fedtrimmedavg dataset=mnist partitioning=iid"
+flwr run . --run-config 'aggregator="fedavg" dataset="mnist" partitioning="iid"'
+flwr run . --run-config 'aggregator="fedmedian" dataset="mnist" partitioning="iid"'
+flwr run . --run-config 'aggregator="fedtrimmedavg" dataset="mnist" partitioning="iid"'
 
 # MNIST Non-IID
-flwr run . --run-config "aggregator=fedavg dataset=mnist partitioning=noniid"
-flwr run . --run-config "aggregator=fedmedian dataset=mnist partitioning=noniid"
-flwr run . --run-config "aggregator=fedtrimmedavg dataset=mnist partitioning=noniid"
+flwr run . --run-config 'aggregator="fedavg" dataset="mnist" partitioning="noniid"'
+flwr run . --run-config 'aggregator="fedmedian" dataset="mnist" partitioning="noniid"'
+flwr run . --run-config 'aggregator="fedtrimmedavg" dataset="mnist" partitioning="noniid"'
 
 # CIFAR-10 IID
-flwr run . --run-config "aggregator=fedavg dataset=cifar10 partitioning=iid"
-flwr run . --run-config "aggregator=fedmedian dataset=cifar10 partitioning=iid"
-flwr run . --run-config "aggregator=fedtrimmedavg dataset=cifar10 partitioning=iid"
+flwr run . --run-config 'aggregator="fedavg" dataset="cifar10" partitioning="iid"'
+flwr run . --run-config 'aggregator="fedmedian" dataset="cifar10" partitioning="iid"'
+flwr run . --run-config 'aggregator="fedtrimmedavg" dataset="cifar10" partitioning="iid"'
 
 # CIFAR-10 Non-IID
-flwr run . --run-config "aggregator=fedavg dataset=cifar10 partitioning=noniid"
-flwr run . --run-config "aggregator=fedmedian dataset=cifar10 partitioning=noniid"
-flwr run . --run-config "aggregator=fedtrimmedavg dataset=cifar10 partitioning=noniid"
+flwr run . --run-config 'aggregator="fedavg" dataset="cifar10" partitioning="noniid"'
+flwr run . --run-config 'aggregator="fedmedian" dataset="cifar10" partitioning="noniid"'
+flwr run . --run-config 'aggregator="fedtrimmedavg" dataset="cifar10" partitioning="noniid"'
 ```
 
 > [!TIP]
