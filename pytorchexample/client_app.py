@@ -19,9 +19,11 @@ def train(msg: Message, context: Context):
     # Get configuration
     partitioning = context.run_config.get("partitioning", "iid")
     dirichlet_alpha = context.run_config.get("dirichlet-alpha", 0.5)
+    dataset = context.run_config.get("dataset", "mnist")
 
     # Load the model and initialize it with the received weights
-    model = Net()
+    num_channels = 1 if dataset.lower() == "mnist" else 3
+    model = Net(num_channels=num_channels)
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -47,7 +49,8 @@ def train(msg: Message, context: Context):
                 num_partitions,
                 batch_size,
                 partitioning=partitioning,
-                dirichlet_alpha=dirichlet_alpha
+                dirichlet_alpha=dirichlet_alpha,
+                dataset=dataset
             )
             train_loss = train_fn(
                 model,
@@ -145,7 +148,8 @@ def train(msg: Message, context: Context):
             num_partitions,
             batch_size,
             partitioning=partitioning,
-            dirichlet_alpha=dirichlet_alpha
+            dirichlet_alpha=dirichlet_alpha,
+            dataset=dataset
         )
         train_loss = train_fn(
             model,
@@ -174,9 +178,11 @@ def evaluate(msg: Message, context: Context):
     # Get configuration
     partitioning = context.run_config.get("partitioning", "iid")
     dirichlet_alpha = context.run_config.get("dirichlet-alpha", 0.5)
+    dataset = context.run_config.get("dataset", "mnist")
 
     # Load the model and initialize it with the received weights
-    model = Net()
+    num_channels = 1 if dataset.lower() == "mnist" else 3
+    model = Net(num_channels=num_channels)
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -190,7 +196,8 @@ def evaluate(msg: Message, context: Context):
         num_partitions,
         batch_size,
         partitioning=partitioning,
-        dirichlet_alpha=dirichlet_alpha
+        dirichlet_alpha=dirichlet_alpha,
+        dataset=dataset
     )
 
     # Call the evaluation function

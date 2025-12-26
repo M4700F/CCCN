@@ -116,6 +116,32 @@ flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="noniid" dirich
 ```
 Result: `results/delayed_freerider_mnist_noniid_fedtrimmedavg.csv`
 
+#### CIFAR-10 Experiments
+
+**7. FedMedian (CIFAR-10 IID):**
+```bash
+flwr run . --run-config 'aggregator="fedmedian" partitioning="iid" dataset="cifar10"'
+```
+Result: `results/delayed_freerider_cifar10_iid_fedmedian.csv`
+
+**8. FedTrimmedAvg (CIFAR-10 IID):**
+```bash
+flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="iid" dataset="cifar10"'
+```
+Result: `results/delayed_freerider_cifar10_iid_fedtrimmedavg.csv`
+
+**9. FedMedian (CIFAR-10 Non-IID):**
+```bash
+flwr run . --run-config 'aggregator="fedmedian" partitioning="noniid" dataset="cifar10" dirichlet-alpha=0.5'
+```
+Result: `results/delayed_freerider_cifar10_noniid_fedmedian.csv`
+
+**10. FedTrimmedAvg (CIFAR-10 Non-IID):**
+```bash
+flwr run . --run-config 'aggregator="fedtrimmedavg" partitioning="noniid" dataset="cifar10" dirichlet-alpha=0.5'
+```
+Result: `results/delayed_freerider_cifar10_noniid_fedtrimmedavg.csv`
+
 ---
 
 ## Configuration Parameters
@@ -123,6 +149,7 @@ Result: `results/delayed_freerider_mnist_noniid_fedtrimmedavg.csv`
 | Parameter | Options | Default | Description |
 |-----------|---------|---------|-------------|
 | `aggregator` | `fedavg`, `fedmedian`, `fedtrimmedavg` | `fedavg` | Aggregation strategy |
+| `dataset` | `mnist`, `cifar10` | `mnist` | Dataset to use |
 | `partitioning` | `iid`, `noniid` | `iid` | Data partitioning |
 | `trim-ratio` | `0.0` - `0.5` | `0.1` | Trim ratio for FedTrimmedAvg |
 | `dirichlet-alpha` | `0.1` - `1.0` | `0.5` | Non-IID alpha (lower = more non-IID) |
@@ -139,13 +166,19 @@ All results are saved in `results/` folder with naming pattern:
 results/delayed_freerider_{dataset}_{partitioning}_{aggregator}.csv
 ```
 
-Examples:
+### MNIST Results:
 - `results/delayed_freerider_mnist_iid_fedavg.csv`
 - `results/delayed_freerider_mnist_iid_fedmedian.csv`
 - `results/delayed_freerider_mnist_iid_fedtrimmedavg.csv`
 - `results/delayed_freerider_mnist_noniid_fedavg.csv`
 - `results/delayed_freerider_mnist_noniid_fedmedian.csv`
 - `results/delayed_freerider_mnist_noniid_fedtrimmedavg.csv`
+
+### CIFAR-10 Results:
+- `results/delayed_freerider_cifar10_iid_fedmedian.csv`
+- `results/delayed_freerider_cifar10_iid_fedtrimmedavg.csv`
+- `results/delayed_freerider_cifar10_noniid_fedmedian.csv`
+- `results/delayed_freerider_cifar10_noniid_fedtrimmedavg.csv`
 
 Each CSV contains: `round,loss,accuracy`
 
@@ -209,7 +242,9 @@ if partition_id < 30:  # 30% malicious clients
 
 ## Running All Experiments
 
-Use the provided script to run all 4 robust aggregator experiments:
+### MNIST Experiments
+
+Use the provided script to run all 4 MNIST robust aggregator experiments:
 
 ```bash
 ./run_experiments.sh
@@ -220,6 +255,22 @@ This runs:
 2. FedTrimmedAvg (IID)
 3. FedMedian (Non-IID)
 4. FedTrimmedAvg (Non-IID)
+
+### CIFAR-10 Experiments
+
+To run all 4 CIFAR-10 experiments:
+
+```bash
+./run_cifar_experiments.sh
+```
+
+This runs:
+1. FedMedian (CIFAR-10 IID)
+2. FedTrimmedAvg (CIFAR-10 IID)
+3. FedMedian (CIFAR-10 Non-IID)
+4. FedTrimmedAvg (CIFAR-10 Non-IID)
+
+**Note:** MNIST and CIFAR-10 results are saved in separate CSV files in the `results/` folder to avoid conflicts
 
 ---
 
