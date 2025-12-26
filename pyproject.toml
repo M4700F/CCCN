@@ -31,6 +31,18 @@ local-epochs = 1
 learning-rate = 0.1
 batch-size = 32
 
+# Aggregation strategy: "fedavg", "fedmedian", or "fedtrimmedavg"
+aggregator = "fedavg"
+# Trim ratio for FedTrimmedAvg (fraction to trim from each end, e.g., 0.1 = 10%)
+trim-ratio = 0.1
+
+# Dataset: currently "mnist" (CIFAR-10 support can be added if needed)
+dataset = "mnist"
+# Partitioning: "iid" or "noniid"
+partitioning = "iid"
+# For non-IID Dirichlet partitioning: lower alpha = more non-IID (typical: 0.1-1.0)
+dirichlet-alpha = 0.5
+
 [tool.flwr.federations]
 default = "local-simulation"
 

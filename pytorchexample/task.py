@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
 from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import IidPartitioner
+from flwr_datasets.partitioner import IidPartitioner, DirichletPartitioner
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, ToTensor
 
@@ -46,15 +46,29 @@ def apply_transforms(batch):
     return batch
 
 
-def load_data(partition_id: int, num_partitions: int, batch_size: int):
-    """Load partition CIFAR10 data."""
+def load_data(
+    partition_id: int,
+    num_partitions: int,
+    batch_size: int,
+    partitioning: str = "iid",
+    dirichlet_alpha: float = 0.5
+):
+    """Load partition MNIST data with configurable partitioning strategy."""
     # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
-        partitioner = IidPartitioner(num_partitions=num_partitions)
+        # Create partitioner based on configuration
+        if partitioning.lower() == "noniid":
+            partitioner = DirichletPartitioner(
+                num_partitions=num_partitions,
+                partition_by="label",
+                alpha=dirichlet_alpha,
+            )
+        else:  # iid
+            partitioner = IidPartitioner(num_partitions=num_partitions)
+
         fds = FederatedDataset(
-            # dataset="uoft-cs/cifar10",
-            dataset = "mnist",
+            dataset="mnist",
             partitioners={"train": partitioner},
         )
     partition = fds.load_partition(partition_id)
