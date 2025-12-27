@@ -63,7 +63,7 @@ def main(grid: Grid, context: Context) -> None:
         initial_arrays=arrays,
         train_config=ConfigRecord({"lr": lr}),
         num_rounds=num_rounds,
-        evaluate_fn=create_global_evaluate(aggregator, dataset, num_channels),
+        evaluate_fn=create_global_evaluate(aggregator, dataset, num_channels, partitioning),
     )
 
     # Save final model to disk
@@ -72,7 +72,7 @@ def main(grid: Grid, context: Context) -> None:
     torch.save(state_dict, "final_model.pt")
 
 
-def create_global_evaluate(aggregator: str, dataset: str, num_channels: int):
+def create_global_evaluate(aggregator: str, dataset: str, num_channels: int, partitioning: str):
     """Create evaluation function with aggregator-specific CSV logging."""
 
     def global_evaluate(server_round: int, arrays: ArrayRecord) -> MetricRecord:
@@ -95,8 +95,15 @@ def create_global_evaluate(aggregator: str, dataset: str, num_channels: int):
         else:
             mode = 'a'
 
-        # Dynamic CSV filename based on aggregator and dataset
-        csv_filename = f"results_{dataset}_{aggregator.lower()}.csv"
+        # Dynamic CSV filename including dataset, partitioning, and aggregator
+        # Save CIFAR-10 results in separate folder
+        if dataset.lower() == "cifar10":
+            import os
+            os.makedirs("cifar_results", exist_ok=True)
+            csv_filename = f"cifar_results/freerider_{dataset}_{partitioning}_{aggregator.lower()}.csv"
+        else:
+            csv_filename = f"freerider_{dataset}_{partitioning}_{aggregator.lower()}.csv"
+
         with open(csv_filename, mode) as f:
             if server_round == 1:
                 f.write("round,loss,accuracy\n")
