@@ -63,7 +63,19 @@ def get_transforms(dataset: str):
 
 def apply_transforms(batch):
     """Apply transforms to the partition from FederatedDataset."""
-    batch["image"] = [pytorch_transforms(img) for img in batch["image"]]
+    # MNIST uses "image" key, CIFAR-10 uses "img" key
+    image_key = "img" if "img" in batch else "image"
+
+    # Apply transforms
+    transformed_images = [pytorch_transforms(img) for img in batch[image_key]]
+
+    # Normalize to "image" key for consistency
+    batch["image"] = transformed_images
+
+    # Remove the original "img" key if it exists (CIFAR-10 case)
+    if "img" in batch and image_key == "img":
+        del batch["img"]
+
     return batch
 
 
