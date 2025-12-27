@@ -36,7 +36,7 @@ class Net(nn.Module):
     def __init__(self, num_classes=10):
         super(Net, self).__init__()
         
-        self.resnet = models.resnet50(pretrained=True)
+        self.resnet = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
         
         # Freeze all layers
         for param in self.resnet.parameters():
