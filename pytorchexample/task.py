@@ -33,6 +33,7 @@ class Net(nn.Module):
         return self.resnet(x)
 
 
+
 fds = None  # Cache FederatedDataset
 
 pytorch_transforms = Compose(
