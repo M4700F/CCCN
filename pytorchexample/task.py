@@ -8,34 +8,38 @@ from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import IidPartitioner
 from pytorchexample.dirichlet_utils import dirichlet_partition
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Normalize, ToTensor
+from torchvision.transforms import Compose, Normalize, ToTensor, Resize
+from torchvision import models
 
 
 class Net(nn.Module):
-    """Model (simple CNN adapted from 'PyTorch: A 60 Minute Blitz')"""
-
-    def __init__(self):
+    """ResNet50 with transfer learning on CIFAR-10 Dataset"""
+    def __init__(self, num_classes=10):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
+        
+        self.resnet = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
+        
+        # Freeze all layers
+        for param in self.resnet.parameters():
+            param.requires_grad = False
+            
+        num_features = self.resnet.fc.in_features
+        
+        
+        self.resnet.fc = nn.Linear(num_features, num_classes)
+    
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return self.fc3(x)
-
+        return self.resnet(x)
 
 fds = None  # Cache FederatedDataset
 
-pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-# pytorch_transforms = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
+pytorch_transforms = Compose(
+    [
+        Resize((224, 224)),
+        ToTensor(),
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ]
+)
 
 
 def apply_transforms(batch):
@@ -100,7 +104,11 @@ def train(net, trainloader, epochs, lr, device):
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
     criterion = torch.nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+    optimizer = torch.optim.SGD(
+        filter(lambda p: p.requires_grad, net.parameters()),
+        lr=lr,
+        momentum=0.9
+    )
     net.train()
     running_loss = 0.0
     for _ in range(epochs):
