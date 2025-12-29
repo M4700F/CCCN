@@ -39,7 +39,7 @@ def train(msg: Message, context: Context):
     context.state["round"] = ConfigRecord({"value": current_round})
 
     # Free-rider attack for partition_id < 30
-    if partition_id < 30:
+    if partition_id < 20:
         if current_round <= k:
             # Phase 1: Train normally for first k rounds
             trainloader, _ = load_data(partition_id, num_partitions, batch_size, noniid=True, alpha=alpha)
