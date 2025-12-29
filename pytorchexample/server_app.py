@@ -62,7 +62,7 @@ def global_evaluate(server_round: int, arrays: ArrayRecord) -> MetricRecord:
     else:
         mode = 'a'
 
-    with open("delayed_free_rider_attack_mnist_iid_after_13_rounds_last_5_rounds_running_avg_results_40_percent.csv", mode) as f:
+    with open("delayed_free_rider_attack_mnist_iid_after_13_rounds_last_5_rounds_running_avg_results_50_percent.csv", mode) as f:
         if server_round == 1:
             f.write("round,loss,accuracy\n")
         f.write(f"{server_round},{test_loss},{test_acc}\n")
