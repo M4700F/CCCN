@@ -76,11 +76,13 @@ def train(msg: Message, context: Context):
                     if queue_key in context.state:
                         model_weights = context.state[queue_key].to_torch_state_dict()
                         if w_sum is None:
-                            w_sum = model_weights[key].clone()
+                            w_sum = model_weights[key].clone().float()
                         else:
-                            w_sum += model_weights[key]
+                            w_sum += model_weights[key].float()
+                
                 if w_sum is not None:
                     avg_state_dict[key] = w_sum / queue_sz
+                    avg_state_dict[key] = avg_state_dict[key].to(model.state_dict()[key].dtype)
                     
             model.load_state_dict(avg_state_dict)
             # Fake metrics for free-rider
